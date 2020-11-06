@@ -5,7 +5,7 @@
 All the information goes into the configuration file (YAML format). There is an example (config.yaml) with comments regarding the files' format.
 
 There are two main R scripts:
-- _demux_seuratR_, performes the demultiplexing of hashtags using Seurat's MULTIseqDemux and further making sure we classify doublets correctly and rescuing barcodes labeled as negative.
+- _demux_seurat.R_, performes the demultiplexing of hashtags using Seurat's MULTIseqDemux and further making sure we classify doublets correctly and rescuing barcodes labeled as negative.
 - _summary.R_, summarises the classified data and gets the barcode names ready to merge it into an aggregated data.
 
 The files you need to prepare are:

@@ -10,7 +10,7 @@ There are two main R scripts:
 
 The files you need to prepare are:
 1. Sample sheet ('samples' in the YAML file).
-	- Can be avoided if your samples have consistent names you can use to select pairs of Ab capture (CITE) and Gex ().
+	- Can be avoided if your samples have consistent names you can use to select pairs of Ab capture (CITE) and gene expression (Gex) data. The you just indicate the Cell Ranger output folder of your data in the 'count_info' part of config.yaml.
 
 NOTES:
 1. The pipeline relies on the samples having the follwing patterns in their name:

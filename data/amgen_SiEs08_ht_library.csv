@@ -1,0 +1,4 @@
+gex,capture,name
+/mnt/BioAdHoc/Groups/vd-vijay/cramirez/amg319/raw/NV035/count/070_SiEs08_Mo_spleen_5v20_Gex/outs/filtered_feature_bc_matrix,/mnt/BioAdHoc/Groups/vd-vijay/cramirez/amg319/raw/NV035/count/072_SiEs08_Mo_spleen_5v20_CITE/outs/raw_feature_bc_matrix,SiEs08_Mo_spleen_5v20
+/mnt/BioAdHoc/Groups/vd-vijay/cramirez/amg319/raw/NV035/count/073_SiEs08_Mo_tumor_5v20_Gex/outs/filtered_feature_bc_matrix,/mnt/BioAdHoc/Groups/vd-vijay/cramirez/amg319/raw/NV035/count/075_SiEs08_Mo_tumor_5v20_CITE/outs/raw_feature_bc_matrix,SiEs08_Mo_tumor_5v20
+/mnt/BioAdHoc/Groups/vd-vijay/cramirez/amg319/raw/NV035/count/076_SiEs08_Mo_colon_5v20_Gex/outs/filtered_feature_bc_matrix,/mnt/BioAdHoc/Groups/vd-vijay/cramirez/amg319/raw/NV035/count/078_SiEs08_Mo_colon_5v20_CITE/outs/raw_feature_bc_matrix,SiEs08_Mo_colon_5v20

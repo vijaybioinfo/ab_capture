@@ -1,4 +1,6 @@
-## Feature Barcoding
+## Feature Barcoding analysis
+
+#### These scripts help you demultiplexing your feature barcoding data when you have hashtags of donors.
 
 All the information goes into the configuration file (YAML format). There is an example (config.yaml) with comments regarding the files' format.
 

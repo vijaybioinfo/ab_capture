@@ -2,7 +2,8 @@
 project_id: amgen_SiEs08
 output_dir: "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/amg319/results/ab_demux"
 sample_sheet: /home/ciro/amg319/info/amgen_SiEs08_ht_library.csv
-count_info: # not necessary if you already have a sample_sheet
+# not necessary if you already have a sample_sheet, but this will create it with all feature barcode libraries
+count_info:
   count_dir: /mnt/BioAdHoc/Groups/vd-vijay/cramirez/amg319/raw/NV035/count
   gex_data: filtered
   fbarcode_data: raw

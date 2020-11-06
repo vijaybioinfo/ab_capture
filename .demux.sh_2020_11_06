@@ -1,0 +1,122 @@
+#!/bin/bash
+
+########################
+# Hashtag data summary #
+########################
+
+# This script creates jobs to run the Hashtag demultiplexing anaylisis for a
+# given pair of expression and hashtag data sets
+
+#### Default parameters #### ---------------------------------------------------
+# SSHEET
+# OUTDIR
+MAX_COUNT_MIN=${MAX_COUNT_MIN:-100}
+RATIO_SECOND=${RATIO_SECOND:-3}
+ABODIES=${ABODIES:-random1234}
+
+##### Job coordination
+SEND=${SEND:-TRUE}
+ASK=${ASK:-TRUE}
+MFID=${MFID:-NONE} # Dependency job ID after which, if successful, these will run
+CIDS=${CIDS:-NONE} # stack job IDs for further purposes
+
+### System variables
+EXEC_R=${EXEC_R:-/share/apps/R/3.6.1/bin/Rscript}
+WALLTIME=${WALLTIME:-10:00:00}
+MEM=${MEM:-10gb}
+NODES=${NODES:-1}
+PPN=${PPN:-1}
+
+## Digesting
+OUTDIR=${OUTDIR}_${MAX_COUNT_MIN}th
+
+echo ' '
+echo -e "\033[1;36m**** Vijay Lab - LJI 2020\033[1m"
+echo -e "\033[0;36m------------------------------- PRESENTING PARAMETERS -------------------------------\033[0m"
+echo "Path to sheets: ${SSHEET}"
+echo "Output path: ${OUTDIR}"
+echo "Minimum count for top feature count: ${MAX_COUNT_MIN}"
+echo "Ratio with the second highest hashtag: ${RATIO_SECOND}"
+echo "Specified antibodies pattern: ${ABODIES}"
+echo "Job system requirements"
+echo "Rscript: ${EXEC_R}"
+echo "Time: ${WALLTIME}"
+echo "Memory: ${MEM}"
+echo "Nodes: ${NODES}"
+echo "Processors: ${PPN}"
+echo -e "\033[0;36m------------------------------- --------------------- -------------------------------\033[0m"
+read -n 1 -s -r -p "Press any key to continue"
+echo; echo
+echo "------------------------ Initialising Hashtag-Gene expression ------------------------"
+source /home/ciro/scripts/functions/bash_functions.sh
+# Clean and create directory
+if [ ! -d ${OUTDIR} ]; then mkdir --parents $OUTDIR; fi
+if [[ "${ASK}" == "TRUE" ]]; then check_dir_content ${OUTDIR}; fi
+if [ ! -d ${OUTDIR}/scripts ]; then mkdir ${OUTDIR}/scripts; fi
+cd ${OUTDIR}
+echo "Working at: `pwd`"
+if [ -s ${SSHEET} ]; then echo "Simple sheet provided."; else echo "No Sample sheet"; exit; fi
+sed 's/"//g' ${SSHEET} > tmp.csv; SSHEET=tmp.csv
+EDATA=(`tail -n +2 ${SSHEET} | cut -d, -f1`)
+CAPTURE=(`tail -n +2 ${SSHEET} | cut -d, -f2`)
+TVAR=`wc -l ${SSHEET} | sed 's/ .*//'`
+NSAMPLES=(`seq 0 $((TVAR-2))`)
+if [ `head -n 1 ${SSHEET} | grep -o "," | wc -l` -ge 2 ]; then
+  echo "Sample names given."
+  LNAME=(`tail -n +2 ${SSHEET} | cut -d, -f3`)
+else
+  LNAME=${NSAMPLES[@]}
+fi
+REDO_ALL=ASK
+echo -e "\033[0;33mAnalysing ${#NSAMPLES[@]} samples\033[0m"
+for IT in ${NSAMPLES[@]}; do
+  echo -e "Sample: \033[0;32m${LNAME[IT]}\033[0m"
+  JOBFILE=${OUTDIR}/scripts/ht_dmx_${LNAME[IT]}
+  if [[ -s ${OUTDIR}/${LNAME[IT]}/${LNAME[IT]}_0_annotation.rdata ]]; then
+    echo -e "\033[0;31mResults already present\033[0m"
+    if [[ "${ASK}" != "TRUE" ]] || [[ "${REDO_ALL}" == "FALSE" ]]; then
+      continue
+    elif [[ "${REDO_ALL}" == "ASK" ]]; then
+      #statements
+      read -p "Do you want to re-do the analysis? (y/n/a/s): " yn
+      case $yn in
+        [Nn]* ) echo -e "\033[0;33mSkipping...\033[0m"; continue;;
+        [Yy]* ) echo -e "\033[0;31mRe-do\033[0m";;
+        [Aa]* ) REDO_ALL=TRUE;;
+        [Ss]* ) REDO_ALL=FALSE; continue;;
+        * ) echo "Please answer yes (Y/y) or no (N/n) or re-do all (A/a) or none (S/s).";;
+      esac
+    fi
+  fi
+
+  echo "Job file: ${JOBFILE}.sh"
+  rm --force ${JOBFILE}.*.txt
+
+  wget -q https://raw.githubusercontent.com/vijaybioinfo/cellranger_wrappeR/main/routine_template.sh -O ${JOBFILE}.sh
+
+  sed -i 's|{username}|'${USER}'|g' ${JOBFILE}.sh
+  sed -i 's|{sampleid}|'${LNAME[IT]}'|g' ${JOBFILE}.sh
+  sed -i 's|\/\.\.||g' ${JOBFILE}.sh
+  sed -i 's|{routine_pbs}|ht_dmx|' ${JOBFILE}.sh
+  sed -i 's|{outpath}|'${OUTDIR}'|g' ${JOBFILE}.sh
+  echo "Pushing critical line..."
+  sed -i 's|{routine_params}|'${EXEC_R}' /home/ciro/scripts/ab_capture/demux_seurat.R --edata='${EDATA[IT]}' --capture='${CAPTURE[IT]}' --outdir='${OUTDIR}' --min_count='${MAX_COUNT_MIN}' --ratio_second='${RATIO_SECOND}' --prefix='${LNAME[IT]}' --abodies="'${ABODIES}'"|g' ${JOBFILE}.sh
+  sed -i 's|{outpath}|'${OUTDIR}'|g' ${JOBFILE}.sh
+
+  sed -i 's|{walltime}|'${WALLTIME}'|g' ${JOBFILE}.sh
+  sed -i 's|{nodes}|'${NODES}'|g' ${JOBFILE}.sh
+  sed -i 's|{ppn}|'${PPN}'|g' ${JOBFILE}.sh
+  sed -i 's|{mem}|'${MEM}'|g' ${JOBFILE}.sh
+
+  if [[ "${SEND}" != "TRUE" ]]; then
+    echo "Check it out";
+  elif [ ${MFID:-NONE} != "NONE" ]; then
+    MFID=$(qsub -W depend=afterok:${MFID} ${JOBFILE}.sh)
+  else
+    CID=$(qsub ${JOBFILE}.sh)
+  fi; CID=`echo ${CID} | sed 's/\..*//'`
+  if [ "${CIDS}" != 'NONE' ]; then CIDS=${CIDS}:${CID}; else CIDS=${CID}; fi
+  echo "Job ID: ${CID}";
+  echo
+done
+rm tmp.csv

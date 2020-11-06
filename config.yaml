@@ -1,0 +1,25 @@
+---
+project_id: amgen_SiEs08
+output_dir: "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/amg319/results/ab_demux"
+sample_sheet: /home/ciro/amg319/info/amgen_SiEs08_ht_library.csv
+count_info: # not necessary if you already have a sample_sheet
+  count_dir: /mnt/BioAdHoc/Groups/vd-vijay/cramirez/amg319/raw/NV035/count
+  gex_data: filtered
+  fbarcode_data: raw
+demux:
+  max_count_min: 100
+  fold_change: 3
+  subset_tags: random1234
+# empty if you want to aggregate everything or provide a folder with cellranger aggregations
+aggregation: /mnt/BioAdHoc/Groups/vd-vijay/cramirez/amg319/raw/NV035/aggr
+# Feature name structure
+tag_str: treatment~donor~hashtag_n~hashtag_id
+job:
+  walltime: 02:00:00
+  mem: 10gb
+  ppn: 1
+  nodes: 1
+  submit: force # yes, no, or force
+pipeline: /home/ciro/scripts/ab_capture
+exec_r: Rscript
+...

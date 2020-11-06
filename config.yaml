@@ -1,7 +1,7 @@
 ---
 project_id: amgen_SiEs08
 output_dir: "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/amg319/results/ab_demux"
-sample_sheet: ./amgen_SiEs08_ht_library.csv
+sample_sheet: ./data/amgen_SiEs08_ht_library.csv
 # not necessary if you already have a sample_sheet, but this will create it with all feature barcode libraries
 count_info:
   count_dir: /mnt/BioAdHoc/Groups/vd-vijay/cramirez/amg319/raw/NV035/count

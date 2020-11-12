@@ -57,8 +57,7 @@ CIDS="NONE"
 
 ### Tool variables
 EXEC_R="$(read_yaml ${CONFIG_FILE} exec_r)"
-PIPELINE="$(read_yaml ${CONFIG_FILE} pipeline)"
-PIPELINE="${PIPELINE%/}"
+PIPELINE_DIR="$(dirname "${0}")"
 
 echo ' '
 echo -e "\033[0;36m**** Vijay Lab - LJI 2020\033[0m"
@@ -125,7 +124,7 @@ for IT in ${NSAMPLES[@]}; do
   sed -i 's|{routine_pbs}|ht_dmx|' ${JOBFILE}.sh
   sed -i 's|{outpath}|'${OUTPUT_DIR}'|g' ${JOBFILE}.sh
   echo "Pushing critical line..."
-  sed -i 's|{routine_params}|'${EXEC_R}' '"${PIPELINE}"'/demux_seurat.R --edata='${EDATA[IT]}' --capture='${CAPTURE[IT]}' --outdir='${OUTPUT_DIR}' --min_count='${MAX_COUNT_MIN}' --ratio_second='${FOLD_CHANGE}' --prefix='${LNAME[IT]}' --abodies="'${ABODIES}'"|g' ${JOBFILE}.sh
+  sed -i 's|{routine_params}|'${EXEC_R}' '${PIPELINE_DIR}'/demux_seurat.R --edata='${EDATA[IT]}' --capture='${CAPTURE[IT]}' --outdir='${OUTPUT_DIR}' --min_count='${MAX_COUNT_MIN}' --ratio_second='${FOLD_CHANGE}' --prefix='${LNAME[IT]}' --abodies="'${ABODIES}'"|g' ${JOBFILE}.sh
   sed -i 's|{outpath}|'${OUTPUT_DIR}'|g' ${JOBFILE}.sh
 
   sed -i 's|{walltime}|'${WALLTIME}'|g' ${JOBFILE}.sh

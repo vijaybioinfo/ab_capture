@@ -52,15 +52,16 @@ optlist <- list(
   make_option(
     opt_str = c("-v", "--meta_vars"), type = "character", default = "orig~|",
     help = paste0("Label columns. Default is 'orig' but you can indicate it\n\t\t",
-                  "either at the beginning ('orig~|'), for a prefix,\n\t\t",
-                  "or the end ('|~tag'), for suffix.")
+    "either at the beginning ('orig~|'), for a prefix,\n\t\t",
+    "or the end ('|~tag'), for suffix. Setting to a random\n\t\t",
+    "string turns it off.")
   )
 )
 optparse <- OptionParser(option_list = optlist)
 opt <- parse_args(optparse)
 
 # opt <- list(
-#   captures = '/mnt/BioAdHoc/Groups/vd-vijay/cramirez/fungal_allergy/results/ab_demux/all_fgal_100th',
+#   captures = '/mnt/BioAdHoc/Groups/vd-vijay/cramirez/fungal_allergy/results/ab_demux/all_nv035_100th',
 #   min_count = 100,
 #   selected = "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/fungal_allergy/raw/NV035/aggr/all_nv035/outs/aggregation.csv",
 #   tag_str = "donor~hashtag_n~hashtag_id",
@@ -69,17 +70,21 @@ opt <- parse_args(optparse)
 #   meta_vars = "orig~|"
 # )
 
-str(opt)
-library(ggplot2)
-library(cowplot)
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(cowplot))
+suppressPackageStartupMessages(library(crayon))
 theme_set(theme_cowplot())
 
+cat(cyan("\n************ Vijay Lab - LJI\n"))
+cat(cyan("-------------------------------------\n"))
+cat(red$bold("------------ Aggregating hashtag information\n"))
+str(opt)
 ### Functions ###%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 source('https://raw.githubusercontent.com/vijaybioinfo/handy_functions/master/devel/code.R'); rm(.Last)
 # Link is loading: dircheck, theObjectSavedIn, remove.factors, translist, get_grouping_cols
 mybarplot <- function(mytab, xax, yax, fax){
   ggplot(mytab, aes_string(x = xax, y = yax, fill = fax)) +
-    geom_bar(stat="identity", position=position_dodge()) +
+    geom_bar(stat = "identity", position = position_dodge()) +
     theme_minimal() + theme(
       strip.text.y = element_text(angle = 0),
       axis.text.x = element_text(size=10, angle = 45, hjust = 1, face = "bold")
@@ -93,35 +98,32 @@ if(file.exists(opt$selected)){
   clust_annot <- read.csv(opt$selected, stringsAsFactors = FALSE)
   libnames <- gsub("^[0-9]{1,}_|_Gex", "", as.character(clust_annot[, 1])) # substitions for compatibility
   # This preserves the aggregation file order
-  fnames <- paste0(dircheck(opt$captures), libnames, "/", libnames, "_0_annotation.rdata")
+  annot_names <- paste0(dircheck(opt$captures), libnames, "/", libnames, "_0_annotation.rdata")
   opt$prefix <- paste0(opt$prefix, basename(gsub('.outs.*', '', opt$selected)))
   opt$selected <- paste0(libnames, collapse = "|")
 }else{
   if(is.null(opt$prefix)) opt$prefix <- "all"
-  fnames <- list.files(pattern = "_0_annotation.rdata", recursive = TRUE, full.names = TRUE)
-  if(is.null(opt$selected)) opt$selected <- paste0(dirname(fnames), collapse = "|")
-  fnames <- paste0(dircheck(opt$captures), fnames[grepl(opt$selected, fnames)])
+  annot_names <- list.files(pattern = "_0_annotation.rdata", recursive = TRUE, full.names = TRUE)
+  if(is.null(opt$selected)) opt$selected <- paste0(dirname(annot_names), collapse = "|")
+  annot_names <- paste0(dircheck(opt$captures), annot_names[grepl(opt$selected, annot_names)])
 }
 cat("Selection pattern:", opt$selected, "\n")
 
 cat("ID:", opt$prefix, "\n")
-fname <- list.files(pattern = "_path", recursive = TRUE, full.names = TRUE)
-cat("Total files:", length(fname), "\n")
-
 ### Summary data.frame ###%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# You just need to declare 'opt' and 'fnames'
-cat("Summarising annotation:", fnames, sep = "\n")
-captured_htl <- lapply(fnames, function(x){
+# You just need to declare 'opt' and 'annot_names'
+cat("Summarising annotation:", annot_names, sep = "\n")
+captured_htl <- lapply(annot_names, function(x){
   if(!file.exists(x)) return("NULL")
   y <- theObjectSavedIn(x)
-  rownames(y) <- gsub("\\-.*", paste0("-", which(fnames %in% x)), rownames(y))
+  rownames(y) <- gsub("\\-.*", paste0("-", which(annot_names %in% x)), rownames(y))
   y
 })
 tvar <- !sapply(sapply(captured_htl, nrow), is.null); tvar
 captured_htl <- captured_htl[tvar]
 cat("Suffixes in barcodes:\n");
 tvar <- data.frame(t(sapply(captured_htl, function(x) gsub(".*\\-(.*)", "-\\1", head(rownames(x), 5)) )))
-dimnames(tvar) <- list(basename(dirname(fnames)), paste0("BC", 1:5))
+dimnames(tvar) <- list(basename(dirname(annot_names)), paste0("BC", 1:5))
 print(tvar)
 
 ## Operations
@@ -145,7 +147,7 @@ if(1){
 if(!any(grepl(opt$separator, as.character(captured_htdf0$HT_ID)))){
   cat("Changing separator\n"); opt$separator <- "_"
 }
-cat("Separator to demultiplexing feature names: ", opt$separator, ".\n", sep = "")
+cat("Separator for metadata columns: ", opt$separator, ".\n", sep = "")
 tvar <- strsplit(as.character(captured_htdf0$HT_ID), opt$separator)
 maxln <- max(sapply(tvar, length))
 cat("Creating donor metadata with", maxln, "columns.\n")
@@ -204,144 +206,167 @@ if(!is.null(opt$replace)){
 str(captured_htdf)
 save(captured_htdf, file = paste0(opt$prefix, ".rdata"))
 list.files(pattern = "rdata")
-cat("Written to:", paste0(opt$prefix, ".rdata"), "\n\n")
+cat(red("Written to:"), paste0(opt$prefix, ".rdata"), "\n\n")
 
-captured_htdf$tmp <- ifelse(captured_htdf$in_gex == "Missed", "Missing_HT", captured_htdf$HT_classification.global)
-captured_htdf$tmp <- gsub("_", " ", captured_htdf$tmp)
+cat(yellow$bold("Plotting report\n")) #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+cat("- Doublet rates\n") #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if(is.character(captured_htdf$in_gex)) captured_htdf$in_gex = captured_htdf$in_gex == "inGex"
+# captured_htdf$tmp <- ifelse(captured_htdf$in_gex, captured_htdf[, grep("HT_ID.global", colnames(captured_htdf))], "No Gex")
+libxclass <- table(captured_htdf[captured_htdf$in_gex, grep("HT_ID.global|origlib", colnames(captured_htdf))])
+libxclass <- round(prop.table(libxclass, margin = 1) * 100, 2)
+rownames(libxclass) <- paste(rownames(libxclass), "-", libxclass[, 'Doublet'])
+ddf1 <- reshape2::melt(libxclass)
+colnames(ddf1) <- c("Library", "variable", "value")
+ddf1$variable <- factor(ddf1$variable, levels = c("Negative", "Singlet", "Doublet"))
+
+p_double_rate <- ggplot(data = ddf1, aes(x = Library, y = value, fill = variable)) +
+  geom_bar(stat = "identity") + coord_flip() +
+  scale_fill_brewer(palette = "Set1", direction = -1) +
+  theme_minimal() + labs(y = "Doublet rate")
+pdf(paste0(opt$prefix, "_0_doublet_rate.pdf"), width = 12, height = 11)
+print(p_double_rate);
+graphics.off()
+
+cat("- Intersections\n") ###%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+fnames <- list.files(pattern = "intersection.csv", recursive = TRUE, full.names = TRUE)
+if(!is.null(opt$selected)) fnames <- fnames[grepl(opt$selected, fnames)]
+ddfl <- lapply(fnames, function(x){
+  y <- read.csv(x, row.names = 1, stringsAsFactors = FALSE)
+  y$Library <- gsub("_intersection.*", "", basename(x))
+  y
+})
+ddf <- data.table::rbindlist(ddfl)
+ddf$Library <- gsub("_0", "", ddf$Library)
+# % that the intersection represents in the total Gex
+ddf$Recovered_HT <- ddf$Intersection / ddf$Gex
+ddf$Missing_HT <- 1 - ddf$Recovered_HT
+ddf$Library <- paste(ddf$Library, "-", round(ddf$Recovered_HT * 100, 1))
+
+ddf1 <- reshape2::melt(ddf[, -c(1:3)])
+p0 <- ggplot(data = ddf1, aes(x = Library, y = value, fill = variable)) +
+  geom_bar(stat = "identity") + coord_flip() +
+  scale_fill_brewer(palette = "Set1", direction = -1) +
+  theme_minimal() + labs(subtitle = "Percentage of Gex cells with HT information")
+ddf1 <- reshape2::melt(ddf[, c(1:4)])
+ddf1$variable <- factor(x = ddf1$variable, c("Gex", "Intersection", "HT"))
+p <- mybarplot(ddf1, xax = 'variable', yax = 'value', fax = 'variable') +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  facet_wrap(~ Library, scales = 'free_y') +
+  scale_fill_brewer(palette = "Paired") +
+  labs(x = NULL, y = NULL, fill = "Type", subtitle = "Number of cells intersecting")
+pdf(paste0(opt$prefix, "_0_intersection.pdf"), width = 12, height = 11)
+print(p0); print(p)
+graphics.off()
+tvar <- file.remove(list.files(pattern = "_summary_intersection"))
+
+cat("- UMI levels\n") #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+captured_htdf$tmp <- factor(
+  x = ifelse(!captured_htdf$in_gex, "No Gex", captured_htdf$HT_classification.global),
+  levels = c("Negative", "No Gex", "Singlet", "Doublet")
+)
 p <- ggplot(data = captured_htdf, aes(x = tmp, y = log2(nCount_HTO + 1), fill = tmp)) +
   geom_violin(width = 0.8, alpha = 0.7, trim = TRUE, adjust = 1, scale = 'width') +
   geom_boxplot(width=0.1, fill = "white", alpha = 0.25, outlier.shape = NA, color = "black") +
-  labs(x = "Category", y = expression("Log"[2]*"(Total UMI + 1)")) +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    legend.position = "none"
-  )
+  scale_fill_brewer(palette = "Set1", direction = -1) +
+  labs(x = "Category", y = expression("Log"[2]*"(Total hashtags' UMI + 1)")) +
+  theme(legend.position = "none")
 pdf(paste0(opt$prefix, "_0_vlnplot_per_class.pdf"), width = 14, height = 14);
 print(p); print(p + facet_wrap(~ origlib));
 graphics.off()
 
-### Some plots... ### %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if(TRUE){
-  if(!is.null(opt$selected)) fname <- fname[grepl(opt$selected, fname)]
-  cat("Checking distributions on", fname, sep = "\n")
-  cat("Pre-filtering (>10 UMI)\n")
-  summdfl <- lapply(fname, function(x){
-    cat(basename(dirname(x)), "\n")
-    htos_count <- Seurat::Read10X(readLines(x))
-    filtered_cb <- matrixStats::colMaxs(as.matrix(htos_count)) > 10
-    cat(sum(filtered_cb), "of", ncol(htos_count), "who's top feature has more than", 10, "counts\n")
-    cat("Range:", paste0(range(htos_count), collapse = " to "), "\n");
-    ddf <- data.frame(t(as.matrix(htos_count)))
-    ddf$Total <- rowSums(ddf)
-    ddf$Library <- basename(dirname(x))
-    ddf[filtered_cb, ]
-  })
-  summdfl <- summdfl[sapply(summdfl, nrow) > 1]
-  ddf <- reshape2::melt(data.table::rbindlist(summdfl, fill = TRUE))
-  ddf <- ddf[!is.na(ddf$value), ]
-  ddf$value[ddf$value == 0] <- 1
+fnames <- list.files(pattern = "_path", recursive = TRUE, full.names = TRUE)
+cat("Total files:", length(fnames), "\n")
+if(!is.null(opt$selected)) fnames <- fnames[grepl(opt$selected, fnames)]
+cat("- Checking distributions on", fnames, sep = "\n")
+cat("  Filtering (>", opt$min_count,"UMI)\n")
+summdfl <- lapply(fnames, function(x){
+  cat(basename(dirname(x)), "\n")
+  htos_count <- Seurat::Read10X(readLines(x))
+  filtered_cb <- matrixStats::colMaxs(as.matrix(htos_count)) > opt$min_count
+  cat("  ", sum(filtered_cb), "of", ncol(htos_count), "who's top feature has more than", opt$min_count, "counts\n")
+  cat("  Range:", paste0(range(htos_count), collapse = " to "), "\n");
+  ddf <- data.frame(t(as.matrix(htos_count)))
+  ddf$Total <- rowSums(ddf)
+  ddf$Library <- basename(dirname(x))
+  ddf[filtered_cb, ]
+})
+summdfl <- summdfl[sapply(summdfl, nrow) > 1]
+ddf <- reshape2::melt(data.table::rbindlist(summdfl, fill = TRUE))
+ddf <- ddf[!is.na(ddf$value), ]
+ddf$value[ddf$value == 0] <- 1
 
-  cat("Hashtag per library\n")
-  p <- ggplot(ddf, aes(x = value, fill = variable)) +
-    geom_vline(xintercept = unique(c(opt$min_count, 500))) +
-    facet_wrap(~ Library, ncol = ifelse(length(unique(ddf$Library)) > 10, 2, 1)) +
-    theme_minimal() +
-    labs(fill = "Hashtag", x = "UMI") + scale_x_log10()
-  pdf(paste0(opt$prefix, "_summary_distribution_1pre_htxlib.pdf"), width = 12, height = 15)
-  print(p + geom_density(alpha = .5) + labs(title = "Not scaled, go to the second page"))
-  print(p + geom_density(aes(y = ..scaled..), alpha = .5) + labs(title = "Scaled"))
+cat("- Hashtag per library\n")
+p <- ggplot(ddf, aes(x = value, fill = variable)) +
+  geom_vline(xintercept = unique(c(opt$min_count, 500))) +
+  facet_wrap(~ Library, ncol = ifelse(length(unique(ddf$Library)) > 10, 2, 1)) +
+  theme_minimal() +
+  labs(fill = "Hashtag", x = "UMI") + scale_x_log10()
+pdf(paste0(opt$prefix, "_summary_distribution_htxlib.pdf"), width = 12, height = 15)
+print(p + geom_density(alpha = .5) + labs(title = "Not scaled, go to the second page"))
+print(p + geom_density(aes(y = ..scaled..), alpha = .5) + labs(title = "Scaled"))
+graphics.off()
+
+cat("- Library per hashtag\n")
+p <- ggplot(ddf, aes(x = value, fill = Library)) +
+  geom_vline(xintercept = unique(c(opt$min_count, 500))) +
+  facet_wrap(~ variable, ncol = 2) +
+  theme_minimal() +
+  labs(fill = "Hashtag", x = "UMI") + scale_x_log10()
+pdf(paste0(opt$prefix, "_summary_distribution_libxht.pdf"), width = 12, height = 15)
+print(p + geom_density(alpha = .5) + labs(title = "Not scaled, go to the second page"))
+print(p + geom_density(aes(y = ..scaled..), alpha = .5) + labs(title = "Scaled"))
+graphics.off()
+tvar <- file.remove(list.files(pattern = "1pre"))
+
+fnames <- list.files(pattern = "_0_table_gex", recursive = TRUE, full.names = TRUE)
+if(!is.null(opt$selected)) fnames <- fnames[grepl(opt$selected, fnames)]
+cat("- Summary bar plots:", length(fnames), "\n")
+ddfl <- lapply(fnames, function(x){
+  y <- read.table(x, sep = "\t")
+  y <- y[-nrow(y), -ncol(y)]
+  y <- cbind(HT = rownames(y), y)
+  ddf <- reshape2::melt(y)
+  ddf <- ddf[!(grepl("Doublet|Negative", ddf[, 1]) & grepl("Singlet", ddf[, 2])), ]
+  ddf <- ddf[!(grepl("Doublet|Negative|Gex_missed", ddf[, 2]) & ddf$value == 0), ]
+  ddf$Library <- gsub("_0_table_gex.*", "", basename(x))
+  ddf
+})
+ddf <- data.table::rbindlist(ddfl)
+ddf$method <- gsub(".*_", "", ddf$Library)
+if(any(ddf$method == "MULTI")) ddf <- ddf[ddf$method == "MULTI", ]
+ddf$Library <- gsub("_hto|_multi", "", ddf$Library, ignore.case = TRUE)
+ddf$HTN <- gsub("HT([0-9]{1,}).*", "\\1", ddf$HT)
+ddf$HTN <- gsub("^0{1,}", "", ifelse(ddf$HTN == "0", "10", ddf$HTN))
+tvar <- strsplit(as.character(ddf$HT), "-")
+maxln <- max(sapply(tvar, length))
+tvar <- lapply(tvar, function(x){
+  if(length(x) < maxln && length(x) == 1) x <- rep(x, length.out = maxln)
+  if(length(x) < maxln) x <- rep(paste0(x, collapse = "-"), length.out = maxln)
+  as.data.frame(t(x))
+})
+ddf <- cbind(ddf, data.table::rbindlist(tvar))
+if(!is.null(opt$tag_str)) colnames(ddf)[-c(1:5)] <- c("All_Hashtags", translist(opt$tag_str)[[1]])
+ddf$variable <- ifelse(as.character(ddf$variable) == "Gex_missed", "No Gex", as.character(ddf$variable))
+ddf$variable <- factor(x = ddf$variable, c("Doublet", "Singlet", "No Gex", "Negative"))
+
+cat("Collapsed:", length(colnames(ddf)[-c(1:5)]), "\n")
+for(j in colnames(ddf)[-c(1:5)]){
+  cat(" -", j, "\n")
+  p <- mybarplot(ddf, xax = j, yax = 'value', fax = 'variable') +
+    facet_grid(Library ~ method, scales = 'free')
+  pdf(paste0(opt$prefix, "_summary_table_collapsed_", j, ".pdf"), width = 10, height = 12)
+  print(p)#; print(p + scale_y_log10())
   graphics.off()
+}
 
-  cat("Library per hashtag\n")
-  p <- ggplot(ddf, aes(x = value, fill = Library)) +
-    geom_vline(xintercept = unique(c(opt$min_count, 500))) +
-    facet_wrap(~ variable, ncol = 2) +
-    theme_minimal() +
-    labs(fill = "Hashtag", x = "UMI") + scale_x_log10()
-  pdf(paste0(opt$prefix, "_summary_distribution_1pre_libxht.pdf"), width = 12, height = 15)
-  print(p + geom_density(alpha = .5) + labs(title = "Not scaled, go to the second page"))
-  print(p + geom_density(aes(y = ..scaled..), alpha = .5) + labs(title = "Scaled"))
-  graphics.off()
-
-  ### Closer look ###%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  cat("Intersections\n")
-  fname <- list.files(pattern = "intersection.csv", recursive = TRUE, full.names = TRUE)
-  if(!is.null(opt$selected)) fname <- fname[grepl(opt$selected, fname)]
-  ddfl <- lapply(fname, function(x){
-    y <- read.csv(x, row.names = 1, stringsAsFactors = FALSE)
-    y$set <- gsub("_intersection.*", "", basename(x))
-    y
-  })
-  ddfl[[1]]
-  ddf <- data.table::rbindlist(ddfl)
-  ddf$set <- gsub("_0", "", ddf$set)
-  ddf$Recovered_HT <- ddf$Intersection / ddf$Gex
-  ddf$Missing_HT <- 1 - ddf$Recovered_HT
-  ddf$set <- paste(ddf$set, "-", round(ddf$Recovered_HT * 100, 1))
-
-  ddf1 <- reshape2::melt(ddf[, -c(1:3)])
-  p0 <- ggplot(data = ddf1, aes(x=set, y=value, fill=variable)) +
-    geom_bar(stat="identity") + coord_flip() +
-    scale_fill_brewer(palette = "Set1", direction = -1) +
-    theme_minimal() + labs(subtitle = "Percentage of Gex cells wich HT information")
-  ddf1 <- reshape2::melt(ddf[, c(1:4)])
-  p <- mybarplot(ddf1, xax = 'variable', yax = 'value', fax = 'variable') +
-    geom_bar(stat="identity", position=position_dodge()) +
-    facet_wrap(~ set, scales = 'free_y') +
-    labs(x = NULL, y = NULL, fill = "Type", subtitle = "Number of cells intersecting")
-  pdf(paste0(opt$prefix, "_summary_intersection.pdf"), width = 12, height = 11)
-  print(p0)
+cat("Per method:", length(unique(ddf$method)), "\n")
+for(i in unique(ddf$method)){
+  cat(" *", i, "\n")
+  p <- mybarplot(ddf[ddf$method == i, ], xax = 'HT', yax = 'value', fax = 'variable') +
+    facet_wrap(~ Library, scales = 'free_y') +
+    labs(x = NULL, y = NULL, fill = "Class", title = casefold(i, upper = TRUE))
+  pdf(paste0(opt$prefix, "_summary_table_", i, ".pdf"), width = 12, height = 12)
   print(p)
+  print(p + scale_y_log10())
   graphics.off()
-
-  fname <- list.files(pattern = "_0_table_gex", recursive = TRUE, full.names = TRUE)
-  if(!is.null(opt$selected)) fname <- fname[grepl(opt$selected, fname)]
-  cat("Summary tables:", length(fname), "\n")
-  ddfl <- lapply(fname, function(x){
-    y <- read.table(x, sep = "\t")
-    y <- y[-nrow(y), -ncol(y)]
-    y <- cbind(HT = rownames(y), y)
-    ddf <- reshape2::melt(y)
-    ddf <- ddf[!(grepl("Doublet|Negative", ddf[, 1]) & grepl("Singlet", ddf[, 2])), ]
-    ddf <- ddf[!(grepl("Doublet|Negative|Gex_missed", ddf[, 2]) & ddf$value == 0), ]
-    ddf$set <- gsub("_0_table_gex.*", "", basename(x))
-    ddf
-  })
-  ddf <- data.table::rbindlist(ddfl)
-  ddf$method <- gsub(".*_", "", ddf$set)
-  if(any(ddf$method == "MULTI")) ddf <- ddf[ddf$method == "MULTI", ]
-  ddf$set <- gsub("_hto|_multi", "", ddf$set, ignore.case = TRUE)
-  ddf$HTN <- gsub("HT([0-9]{1,}).*", "\\1", ddf$HT)
-  ddf$HTN <- gsub("^0{1,}", "", ifelse(ddf$HTN == "0", "10", ddf$HTN))
-  tvar <- strsplit(as.character(ddf$HT), "-")
-  maxln <- max(sapply(tvar, length))
-  tvar <- lapply(tvar, function(x){
-    if(length(x) < maxln && length(x) == 1) x <- rep(x, length.out = maxln)
-    if(length(x) < maxln) x <- rep(paste0(x, collapse = "-"), length.out = maxln)
-    as.data.frame(t(x))
-  })
-  ddf <- cbind(ddf, data.table::rbindlist(tvar))
-  if(!is.null(opt$tag_str)) colnames(ddf)[-c(1:5)] <- c("All_Hashtags", translist(opt$tag_str)[[1]])
-
-  cat("Collapsed:", length(colnames(ddf)[-c(1:5)]), "\n")
-  for(j in colnames(ddf)[-c(1:5)]){
-    cat(" -", j, "\n")
-    p <- mybarplot(ddf, xax = j, yax = 'value', fax = 'variable') +
-      facet_grid(set ~ method, scales = 'free')
-    pdf(paste0(opt$prefix, "_summary_table_collapsed_", j, ".pdf"), width = 7, height = 12)
-    print(p)#; print(p + scale_y_log10())
-    graphics.off()
-  }
-
-  cat("Per method:", length(unique(ddf$method)), "\n")
-  for(i in unique(ddf$method)){
-    cat(" *", i, "\n")
-    p <- mybarplot(ddf[ddf$method == i, ], xax = 'HT', yax = 'value', fax = 'variable') +
-      facet_wrap(~ set, scales = 'free_y') +
-      labs(x = NULL, y = NULL, fill = "Class", title = casefold(i, upper = TRUE))
-    pdf(paste0(opt$prefix, "_summary_table_", i, ".pdf"), width = 12, height = 12)
-    print(p)
-    print(p + scale_y_log10())
-    graphics.off()
-  }
 }

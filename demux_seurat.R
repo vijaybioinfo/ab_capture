@@ -270,7 +270,7 @@ if(1){
   tvar <- reshape2::melt(table(annot[, tail(mode_classes, 1)], annot$HT_ID));
   tvar <- remove.factors(tvar); colnames(tvar) <- c("Old", "New", "Number")
   tvar <- tvar[tvar$Number > 0, ]; tvar <- tvar[tvar$Old != tvar$New, ]; print(tvar)
-  annot$in_gex <- ifelse(rownames(annot) %in% gexnames, "inGex", "Missed")
+  annot$in_gex <- rownames(annot) %in% gexnames
   print(table(annot$in_gex))
   print(reshape2::melt(table(annot$HT_ID)))
   cat("Didn't pass the ratio filter")
@@ -300,7 +300,7 @@ ht_object@meta.data <- joindf(ht_object@meta.data, annot)
 save(ht_object, file = paste0(prefix, "_6_object.rdata"))
 
 # Group cells based on the max HTO signal
-ht_object@meta.data$in_gex <- ifelse(rownames(ht_object@meta.data) %in% gexnames, "inGex", "Missed")
+ht_object@meta.data$in_gex <- rownames(ht_object@meta.data) %in% gexnames
 annot <- ht_object@meta.data
 # mode_classes <- c(HTO = "HTO_maxID", MULTI = "MULTI_ID")
 mode_classes <- c(HTO = "hash.ID", MULTI = "MULTI_ID", HT = "HT_ID")
@@ -316,7 +316,7 @@ for(i in tail(1:length(mode_classes), 1)){
 
   cat("Class per hashtag\n")
   annot$tmp <- as.character(annot[, paste0(myclassification, ".global")])
-  annot$tmp[annot$in_gex == 'Missed'] <- "Gex_missed"
+  annot$tmp[!annot$in_gex] <- "Gex_missed"
   mytab <- t(table_pct(annot[, c("tmp", unname(mode_class))]))
   write.table(mytab, file = paste0(prefixt, "_0_table_gex.txt"), sep = "\t", quote = FALSE)
   ddf <- reshape2::melt(mytab[-nrow(mytab), -ncol(mytab)])

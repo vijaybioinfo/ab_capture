@@ -22,7 +22,7 @@ job:
   mem: 10gb
   ppn: 1
   nodes: 1
-  submit: force # yes, no, or force
+  submit: yes # yes, no, or force
 pipeline: ./
 exec_r: Rscript
 ...

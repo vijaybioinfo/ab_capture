@@ -45,6 +45,7 @@ MAX_COUNT_MIN="$(read_yaml ${CONFIG_FILE} max_count_min)"
 OUTPUT_DIR=${OUTPUT_DIR%/}/${PROJECT_ID}_${MAX_COUNT_MIN}th
 FOLD_CHANGE="$(read_yaml ${CONFIG_FILE} fold_change)"
 ABODIES="$(read_yaml ${CONFIG_FILE} subset_tags)"
+SSHEET=${OUTPUT_DIR}/library.csv
 
 ## Job coordination
 SUBMIT="$(read_yaml ${CONFIG_FILE} submit)"
@@ -61,14 +62,6 @@ PIPELINE_DIR="$(dirname "${0}")"
 
 echo ' '
 echo -e "\033[0;36m**** Vijay Lab - LJI 2020\033[0m"
-
-echo "Fetching samples"
-if [[ "${VERBOSE}" == "TRUE" ]]; then
-  sh $(dirname $0)/create_library_csv.sh -y ${CONFIG_FILE} -v
-else
-  sh $(dirname $0)/create_library_csv.sh -y ${CONFIG_FILE}
-fi
-SSHEET=${OUTPUT_DIR}/library.csv
 
 echo -e "\033[0;36m------------------------------- PRESENTING PARAMETERS -------------------------------\033[0m"
 echo "Paths to samples: ${SSHEET}"
@@ -91,6 +84,14 @@ if [ ! -d ${OUTPUT_DIR} ]; then mkdir --parents $OUTPUT_DIR; fi
 if [ ! -d ${OUTPUT_DIR}/scripts ]; then mkdir ${OUTPUT_DIR}/scripts; fi
 cd ${OUTPUT_DIR}
 echo "Working at: `pwd`"
+
+echo "Fetching samples"
+if [[ "${VERBOSE}" == "TRUE" ]]; then
+  sh $(dirname $0)/create_library_csv.sh -y ${CONFIG_FILE} -v
+else
+  sh $(dirname $0)/create_library_csv.sh -y ${CONFIG_FILE}
+fi
+
 EDATA=(`tail -n +2 ${SSHEET} | cut -d, -f1`)
 CAPTURE=(`tail -n +2 ${SSHEET} | cut -d, -f2`)
 TVAR=`wc -l ${SSHEET} | sed 's/ .*//'`

@@ -76,6 +76,7 @@ echo "Memory: ${MEM}"
 echo "Nodes: ${NODES}"
 echo "Sumitting jobs? ${SUBMIT}"
 echo "Processors: ${PPN}"
+echo "Submit: ${SUBMIT}"
 echo -e "\033[0;36m------------------------------- --------------------- -------------------------------\033[0m"
 echo; echo
 echo "------------------------ Initialising Hashtag demultiplexing ------------------------"
@@ -133,7 +134,7 @@ for IT in ${NSAMPLES[@]}; do
   sed -i 's|{ppn}|'${PPN}'|g' ${JOBFILE}.sh
   sed -i 's|{mem}|'${MEM}'|g' ${JOBFILE}.sh
 
-  if [[ `echo "${SUBMIT}" | grep -vE "TRUE|yes|y" | wc -l` -eq 0 ]]; then # if these are present
+  if [[ "$(echo "${SUBMIT}" | grep -E "TRUE|yes|y" | wc -l)" == "0" ]]; then # if these are not present
     echo "Check it out"; continue
   fi
   if [[ "${DEPEND}" != "" ]]; then

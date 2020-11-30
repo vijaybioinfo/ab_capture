@@ -4,8 +4,8 @@
 # Antibody/hashtag exploration #
 ################################
 
-# This code will cuantify the overlap between two libraries of Gex and Antibody
-# Capture + some other metrics
+# This code will generate a report of the overlap between Gex and
+# hashtag libraries
 
 library(optparse)
 
@@ -160,11 +160,11 @@ meta_donor <- remove.factors(data.frame(meta_donor, row.names = rownames(capture
 if(!is.null(opt$tag_str)) colnames(meta_donor) <- translist(opt$tag_str)[[1]]
 headtail(meta_donor)
 cat("Checking created columns\n")
-sapply(meta_donor, table, useNA = 'always')
+lapply(meta_donor, table, useNA = 'always')
 rnname <- ifelse(grepl("~", opt$metadata), gsub(".*~", "", opt$metadata), 1)
 opt$metadata <- gsub("~.*", "", opt$metadata)
 if(file.exists(opt$metadata)){
-  cat("Adding given metadata\n")
+  cat("Adding given metadata:", opt$metadata, "\n- Using row names:", rnname, "\n")
   extra_meta_donor <- read.csv(opt$metadata, stringsAsFactors = FALSE, row.names = rnname)
   extra_meta_donor[extra_meta_donor == ""] <- NA
   extra_meta_donor_e <- extra_meta_donor[meta_donor$donor, ]; rownames(extra_meta_donor_e) <- rownames(meta_donor)

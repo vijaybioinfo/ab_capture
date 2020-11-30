@@ -66,9 +66,15 @@ if(is.null(opt$prefix)){
 }
 
 ### Reading data ###%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-outdir <- paste0(dircheck(opt$outdir), prefix)
-dir.create(outdir); setwd(outdir)
-cat("Out put at:", getwd(), "\n")
+#outdir <- paste0(dircheck(opt$outdir), prefix)
+#dir.create(outdir); setwd(outdir)
+output_dir <- paste0(dircheck(opt$outdir), prefix)
+if(!grepl("scratch|beegfs", getwd())){
+  cat("No scratch folder involved; careful about temp files...\n")
+  dir.create(output_dir, recursive = TRUE); setwd(output_dir)
+}
+cat("Working in:", getwd(), "\n")
+
 # Load in the UMI matrix
 writeLines(text = opt$capture, con = "_capture_path")
 htos_count <- Seurat::Read10X(opt$capture)

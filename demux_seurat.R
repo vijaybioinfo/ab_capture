@@ -66,13 +66,13 @@ if(is.null(opt$prefix)){
 }
 
 ### Reading data ###%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#outdir <- paste0(dircheck(opt$outdir), prefix)
-#dir.create(outdir); setwd(outdir)
-output_dir <- paste0(dircheck(opt$outdir), prefix)
-if(!grepl("scratch|beegfs", getwd())){
-  cat("No scratch folder involved; careful about temp files...\n")
-  dir.create(output_dir, recursive = TRUE); setwd(output_dir)
-}
+output_dir <- paste0(
+  if(!grepl("scratch|beegfs", getwd(), ignore.case = TRUE)){
+    cat("No scratch folder involved; careful about temp files...\n")
+    dircheck(opt$outdir)
+  }else{ "./" }, prefix
+)
+dir.create(output_dir, recursive = TRUE); setwd(output_dir)
 cat("Working in:", getwd(), "\n")
 
 # Load in the UMI matrix
@@ -111,7 +111,7 @@ p <- ggplot(ddf, aes(x = value, fill = variable)) +
     strip.background = element_blank(),
     strip.text.x = element_blank()
   ) + labs(fill = "Hashtag", x = "UMI") + scale_x_log10()
-pdf(paste0(prefix, "_0_distribution_1pre.pdf"), width = 7, height = 10)
+pdf(paste0("step_0_distribution_1pre.pdf"), width = 7, height = 10)
 print(p)
 graphics.off()
 
@@ -131,7 +131,7 @@ p <- ggplot(ddf, aes(x = value, fill = variable)) +
     strip.background = element_blank(),
     strip.text.x = element_blank()
   ) + labs(fill = "Hashtag", x = "UMI") + scale_x_log10()
-pdf(paste0(prefix, "_0_distribution_2post.pdf"), width = 7, height = 10)
+pdf(paste0("step_0_distribution_2post.pdf"), width = 7, height = 10)
 print(p)
 graphics.off()
 
@@ -145,7 +145,7 @@ p <- ggplot(data = ddf, aes_string(x = "Var2", y = "value", fill = "Var2")) +
     axis.text.x = element_text(angle = 90, hjust = 1),
     legend.position = "none"
   )
-pdf(paste0(prefix, "_0_vlnplot_per_feature.pdf")); print(p); graphics.off()
+pdf(paste0("step_0_vlnplot_per_feature.pdf")); print(p); graphics.off()
 
 ### Checking overlap ###%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Select cell barcodes detected by both RNA and HTO In the example datasets we have already
@@ -163,7 +163,7 @@ tvar <- data.frame(
   HT = length(colnames(htos_count)),
   Intersection = length(joint.bcs)
 )
-write.csv(tvar, file = paste0(prefix, "_0_intersection.csv"))
+write.csv(tvar, file = paste0("step_0_intersection.csv"))
 gexnames = colnames(gex_count); rm(gex_count)
 cat(sum_statement, "\n")
 
@@ -284,7 +284,7 @@ if(1){
 }
 
 ### Saving results ### %%%%%%%%%%%%%
-save(annot, file = paste0(prefix, "_0_annotation.rdata"))
+save(annot, file = paste0("step_0_annotation.rdata"))
 
 # Calculate tSNE embeddings with a distance matrix
 cat("Dimentional reduction.\n")
@@ -303,7 +303,7 @@ ht_object <- RunUMAP(ht_object, assay = 'HTO', features = rownames(ht_object[["H
 
 ht_object@assays <- ht_object@assays['HTO']
 ht_object@meta.data <- joindf(ht_object@meta.data, annot)
-save(ht_object, file = paste0(prefix, "_6_object.rdata"))
+save(ht_object, file = paste0("step_6_object.rdata"))
 
 # Group cells based on the max HTO signal
 ht_object@meta.data$in_gex <- rownames(ht_object@meta.data) %in% gexnames
@@ -317,7 +317,7 @@ if(length(mode_classes) == 0){
 for(i in tail(1:length(mode_classes), 1)){
   mode_class <- mode_classes[i]
   myclassification <- paste0(names(mode_class), "_classification")
-  prefixt <- paste0(prefix, "_", names(mode_class))
+  prefixt <- paste0("step_method", names(mode_class))
   cat("Using:", mode_class, "\n")
 
   cat("Class per hashtag\n")

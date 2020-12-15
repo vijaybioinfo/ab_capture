@@ -109,7 +109,7 @@ for IT in ${NSAMPLES[@]}; do
   echo -e "Sample: \033[0;32m${LNAME[IT]}\033[0m"
   JOBFILE=${OUTPUT_DIR}/scripts/ht_dmx_${LNAME[IT]}
 
-  if [[ -s ${OUTPUT_DIR}/${LNAME[IT]}/${LNAME[IT]}_0_annotation.rdata ]] && \
+  if [[ -s ${OUTPUT_DIR}/${LNAME[IT]}/${LNAME[IT]}_0_annotation.rds ]] && \
      [[ `echo "${SUBMIT}" | grep -E "force|f" | wc -l` -eq 0 ]] # if it's not force
   then
     echo -e "\033[0;31mResults already present\033[0m"; continue
@@ -123,7 +123,7 @@ for IT in ${NSAMPLES[@]}; do
   sed -i 's|{username}|'${USER}'|g' ${JOBFILE}.sh
   sed -i 's|{sampleid}|'${LNAME[IT]}'|g' ${JOBFILE}.sh
   sed -i 's|\/\.\.||g' ${JOBFILE}.sh
-  sed -i 's|{routine_pbs}|ht_dmx|' ${JOBFILE}.sh
+  sed -i 's|{routine_pbs}|DemuxHT|' ${JOBFILE}.sh
   sed -i 's|{outpath}|'${OUTPUT_DIR}'|g' ${JOBFILE}.sh
   echo "Pushing critical line..."
   sed -i 's|{routine_params}|'${EXEC_R}' '${PIPELINE_DIR}'/demux_seurat.R --edata='${EDATA[IT]}' --capture='${CAPTURE[IT]}' --outdir='${OUTPUT_DIR}' --min_count='${MAX_COUNT_MIN}' --ratio_second='${FOLD_CHANGE}' --prefix='${LNAME[IT]}' --abodies="'${ABODIES}'"|g' ${JOBFILE}.sh
@@ -134,7 +134,7 @@ for IT in ${NSAMPLES[@]}; do
   sed -i 's|{ppn}|'${PPN}'|g' ${JOBFILE}.sh
   sed -i 's|{mem}|'${MEM}'|g' ${JOBFILE}.sh
 
-  if [[ "$(echo "${SUBMIT}" | grep -E "TRUE|yes|y" | wc -l)" == "0" ]]; then # if these are not present
+  if [[ "$(echo "${SUBMIT}" | grep -E "TRUE|yes|y" | wc -l)" != "0" ]]; then # if these are present
     echo "Check it out"; continue
   fi
   if [[ "${DEPEND}" != "" ]]; then

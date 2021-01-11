@@ -50,9 +50,12 @@ opt <- parse_args(optparse)
 ### Loading packages and functions ###%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 source('https://raw.githubusercontent.com/vijaybioinfo/handy_functions/master/devel/code.R'); rm(.Last)
 # Link is loading: dircheck, joindf, remove.factors
-library(Seurat)
-library(ggplot2)
-library(cowplot)
+suppressPackageStartupMessages({
+  library(Seurat)
+  library(ggplot2)
+  library(cowplot)
+  library(patchwork)
+})
 theme_set(theme_cowplot())
 
 ### Pre-processing parameters ###%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -328,6 +331,9 @@ for(i in tail(1:length(mode_classes), 1)){
   ddf <- reshape2::melt(mytab[-nrow(mytab), -ncol(mytab)])
   ddf <- ddf[!(grepl("Doublet|Negative", ddf[, 1]) & grepl("Singlet", ddf[, 2])), ]
   ddf <- ddf[!(grepl("Doublet|Negative|Gex_missed", ddf[, 2]) & ddf$value == 0), ]
+  tvar <- c("Doublet", "Singlet", "Gex_missed")
+  tvar <- tvar[tvar %in% as.character(ddf$Var2)]
+  ddf$Var2 <- factor(as.character(ddf$Var2), tvar)
 
   p <- ggplot(ddf, aes(x = Var1, y = value, fill = Var2)) +
     geom_bar(stat="identity", position=position_dodge()) +
@@ -340,9 +346,13 @@ for(i in tail(1:length(mode_classes), 1)){
   graphics.off()
   cat("Class per hashtag, percentage\n")
   # Seurat annoyingly changes "_" to "-"
-  tvar <- rownames(ht_object[["HTO"]])[rownames(ht_object[["HTO"]]) %in% gsub("_", "-", rownames(mytab))]
+  # tvar <- rownames(ht_object[["HTO"]])[rownames(ht_object[["HTO"]]) %in% gsub("_", "-", rownames(mytab))]
+  tvar <- rownames(mytab)[gsub("_", "-", rownames(mytab)) %in% rownames(ht_object[["HTO"]])]
   ddf <- mytab[tvar, -ncol(mytab)] / mytab[tvar, ncol(mytab)]
   ddf <- reshape2::melt(ddf * 100)
+  tvar <- c("Doublet", "Singlet", "Gex_missed")
+  tvar <- tvar[tvar %in% as.character(ddf$Var2)]
+  ddf$Var2 <- factor(as.character(ddf$Var2), tvar)
   p <- ggplot(ddf, aes(x = Var1, y = value, fill = Var2)) +
     geom_bar(stat="identity", position=position_dodge()) +
     theme_minimal() + theme(
@@ -388,25 +398,25 @@ for(i in tail(1:length(mode_classes), 1)){
   graphics.off()
 
   mylevels = c(Doublet = "red", Singlet = "blue", Negative = "#BEBEBE")[levels(Idents(ht_object))]
+  ht_object@meta.data$is_there_gex <- ifelse(ht_object@meta.data$in_gex, "In Gex", "No Gex")
   for(redu in names(ht_object@reductions)){
-    p <- list(
-      DimPlot(ht_object, reduction = redu, cols = mylevels),
-      DimPlot(ht_object, reduction = redu, group.by = unname(mode_class)),
-      DimPlot(ht_object, reduction = redu, group.by = 'in_gex'),
-      DimPlot(ht_object, reduction = redu, group.by = paste0(myclassification, ".global"))
-    )
-    p$legend <- cowplot::get_legend(p[[4]])
-    p[[4]] <- p[[4]] + theme(legend.position = "none")
+    p1 <- DimPlot(ht_object, reduction = redu, cols = mylevels)
+    p2 <- DimPlot(ht_object, reduction = redu, group.by = unname(mode_class))
+    p3 <- DimPlot(ht_object, reduction = redu, group.by = 'is_there_gex', cols = c("In Gex" = "blue", "No Gex" = "red"))
+    p4 <- DimPlot(ht_object, reduction = redu, group.by = paste0(myclassification, ".global"))
     pdf(paste0(prefixt, "_4_", redu, "_classes.pdf"), width = 14, height = 12)
-    print(cowplot::plot_grid(plotlist = p))
+    print((p1 | p2) / (p3 | p4))
     graphics.off()
   }
 
   cat("Heatmap.\n")
   # To increase the efficiency of plotting, you can subsample cells using the num.cells argument
+  tvar <- if(names(mode_class) == "HT"){
+    ht_object@meta.data[, tvar] <- gsub("_", "-", ht_object@meta.data[, tvar]); "HT_ID"
+  }else{ myclassification }
   p <- try(HTOHeatmap(
-    ht_object, assay = "HTO", ncells = 3000,
-    classification = myclassification, global.classification = paste0(myclassification, ".global")
+    object = ht_object, assay = "HTO", ncells = 3000,
+    classification = tvar, global.classification = paste0(myclassification, ".global")
   ), silent = TRUE)
   if(class(p)[1] != "try-error"){
     pdf(paste0(prefixt, "_5_heatmap_classes.pdf"), width = 10, height = 7)
@@ -414,4 +424,4 @@ for(i in tail(1:length(mode_classes), 1)){
     graphics.off()
   }
 }
-cat("Finished.\n")
+cat("Finished demultiplexing.\n")

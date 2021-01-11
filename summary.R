@@ -1,11 +1,11 @@
 #!/usr/bin/R
 
-################################
-# Antibody/hashtag exploration #
-################################
+########################################
+# Antibody-hashtag summary/aggregation #
+########################################
 
 # This code will generate a report of the overlap between Gex and
-# hashtag libraries
+# hashtag libraries as well as the metadata for aggregated libraries
 
 library(optparse)
 
@@ -59,15 +59,6 @@ optlist <- list(
 )
 optparse <- OptionParser(option_list = optlist)
 opt <- parse_args(optparse)
-
-# opt <- list(
-#   captures = "/home/ciro/large/christian/results/ab_demux/SiEs10_100th",
-#   min_count = 100,
-#   selected = "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/christian/raw/NV038/aggr/all_HNSCC/outs/aggregation.csv",
-#   tag_str = "donor~tissue~hashtag_n~hashtag_id",
-#   separator = "-",
-#   meta_vars = "orig~|"
-# )
 
 suppressPackageStartupMessages(library(crayon))
 

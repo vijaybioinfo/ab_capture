@@ -11,8 +11,12 @@ demux:
   max_count_min: 100
   fold_change: 3
   subset_tags: random1234
-# empty if you want to aggregate everything or provide a folder with cellranger aggregations
-aggregation: /mnt/BioAdHoc/Groups/vd-vijay/cramirez/amg319/raw/NV035/aggr
+# empty if you want to aggregate everything; or and aggregate.csv, or
+# path to cellranger aggregations (containing aggr1/outs aggr2/outs); also a regex "sample1|sample2"
+# args is for summary.R (exclude min_count, selected, and tag_str)
+aggregation:
+  source: "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/fungal_allergy/raw/cellranger/aggr"
+  args: "--metadata=/home/ciro/fungal_allergy/info/metadata_donor.csv~donor"
 # Feature name structure; example is from Placebo-V-TSC5-C0305
 # Always include 'donor' as one of them.
 tag_str: treatment~donor~hashtag_n~hashtag_id

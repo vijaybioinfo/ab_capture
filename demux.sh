@@ -51,6 +51,7 @@ SSHEET=${OUTPUT_DIR}/library.csv
 SUBMIT="$(read_yaml ${CONFIG_FILE} submit)"
 DEPEND="$(read_yaml ${CONFIG_FILE} dependency)"
 WALLTIME="$(read_yaml ${CONFIG_FILE} walltime)"
+if [[ "${WALLTIME}" == "0" ]]; then WALLTIME=01:00:00; fi
 MEM="$(read_yaml ${CONFIG_FILE} mem)"
 NODES="$(read_yaml ${CONFIG_FILE} nodes)"
 PPN="$(read_yaml ${CONFIG_FILE} ppn)"
@@ -88,9 +89,9 @@ echo "Working at: `pwd`"
 
 echo "Fetching samples"
 if [[ "${VERBOSE}" == "TRUE" ]]; then
-  sh $(dirname $0)/create_library_csv.sh -y ${CONFIG_FILE} -v
+  sh ${PIPELINE_DIR}/create_library_csv.sh -y ${CONFIG_FILE} -v
 else
-  sh $(dirname $0)/create_library_csv.sh -y ${CONFIG_FILE}
+  sh ${PIPELINE_DIR}/create_library_csv.sh -y ${CONFIG_FILE}
 fi
 
 EDATA=(`tail -n +2 ${SSHEET} | cut -d, -f1`)
@@ -107,16 +108,15 @@ fi
 echo -e "\033[0;33mAnalysing ${#NSAMPLES[@]} samples\033[0m"
 for IT in ${NSAMPLES[@]}; do
   echo -e "Sample: \033[0;32m${LNAME[IT]}\033[0m"
-  JOBFILE=${OUTPUT_DIR}/scripts/ht_dmx_${LNAME[IT]}
+  JOBFILE=${OUTPUT_DIR}/scripts/DemuxHT_${LNAME[IT]}
 
-  if [[ -s ${OUTPUT_DIR}/${LNAME[IT]}/${LNAME[IT]}_0_annotation.rds ]] && \
-     [[ `echo "${SUBMIT}" | grep -E "force|f" | wc -l` -eq 0 ]] # if it's not force
+  if [[ -s ${OUTPUT_DIR}/${LNAME[IT]}/step_0_annotation.rdata ]] && \
+     [[ "$(echo "${SUBMIT}" | grep -E "force|f" | wc -l)" == "0" ]] # if it's not force
   then
     echo -e "\033[0;31mResults already present\033[0m"; continue
   fi
 
   echo "Job file: ${JOBFILE}.sh"
-  rm --force ${JOBFILE}.*.txt
 
   wget -q https://raw.githubusercontent.com/vijaybioinfo/cellranger_wrappeR/main/routine_template.sh -O ${JOBFILE}.sh
 
@@ -133,10 +133,12 @@ for IT in ${NSAMPLES[@]}; do
   sed -i 's|{nodes}|'${NODES}'|g' ${JOBFILE}.sh
   sed -i 's|{ppn}|'${PPN}'|g' ${JOBFILE}.sh
   sed -i 's|{mem}|'${MEM}'|g' ${JOBFILE}.sh
+  # ls -loh scripts
 
-  if [[ "$(echo "${SUBMIT}" | grep -E "TRUE|yes|y" | wc -l)" != "0" ]]; then # if these are present
-    echo "Check it out"; continue
+  if [[ "$(echo "${SUBMIT}" | grep -E "FALSE|no|n" | wc -l)" != "0" ]]; then
+    echo "Check it out"; continue # do not submit
   fi
+  rm --force ${JOBFILE}.*.txt
   if [[ "${DEPEND}" != "" ]]; then
     DEPEND=$(qsub -W depend=afterok:${DEPEND} ${JOBFILE}.sh)
   else
@@ -147,18 +149,8 @@ for IT in ${NSAMPLES[@]}; do
   echo
 done
 
-# AGGR_DIR="$(read_yaml ${CONFIG_FILE} aggregation)"
-#
-# echo ' '
-# echo -e "\033[0;35m---------- Summary.\033[0m"
-# AGGREGATES=(`ls ${CELLRANGER_OUTPUT}/aggr`)
-# if [[ ${#AGGREGATES[@]} -eq 0 ]]; then AGGREGATES=all_r123; SELECTED=""; fi
-# for AGGREGATE in ${AGGREGATES[@]}; do
-#   if [[ "${AGGREGATE}" != "all_r123" ]]; then
-#     SELECTED="${CELLRANGER_OUTPUT}/aggr/${AGGREGATE}/outs/aggregation.csv"
-#   fi
-#   Rscript ${PIPELINE_DIR}/summary.R -c ${OUTDIR} \
-#     --selected=${SELECTED} \
-#     --tag_str=${FEAT_STRUCTURE} \
-#     --metadata=${METADATA_DONOR}
-# done
+# Take the aggregations
+# ROUTINE_PARAMS0="${EXEC_R} ${PIPELINE_DIR}/summary.R -c ${OUTPUT_DIR} -m ${MAX_COUNT_MIN}"
+if [[ "$(grep "aggregation:" ${CONFIG_FILE} | wc -l)" != "0" ]]; then
+  ${EXEC_R} ${PIPELINE_DIR}/summary_jobs.R -y ${CONFIG_FILE} -p "${PIPELINE_DIR}/"
+fi

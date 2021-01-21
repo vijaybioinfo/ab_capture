@@ -47,6 +47,17 @@ optlist <- list(
 optparse <- OptionParser(option_list = optlist)
 opt <- parse_args(optparse)
 
+# opt <- list(
+#   edata        = "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/asthma_biopsy/raw/cellranger/count/Biopsy1_Hu_45X_2P_Gex/outs/filtered_feature_bc_matrix",
+#   capture      = "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/asthma_biopsy/raw/cellranger/count/Biopsy1_Hu_45X_2P_CITE/outs/raw_feature_bc_matrix",
+#   outdir       = "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/asthma_biopsy/results/ab_demux/biop1to7_100th",
+#   min_count    = 100,
+#   ratio_second = 3,
+#   prefix       = "Biopsy1_Hu_45X_2P",
+#   abodies      = "NIH",
+#   separator    = "-"
+# )
+
 ### Loading packages and functions ###%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 source('https://raw.githubusercontent.com/vijaybioinfo/handy_functions/master/devel/code.R'); rm(.Last)
 # Link is loading: dircheck, joindf, remove.factors
@@ -91,13 +102,14 @@ if(any(found_bodies)){
   cat("Filtering by specified antibodies:", abodies, "\n")
   tvar <- rownames(htos_count)[!found_bodies]
   htos_count <- htos_count[found_bodies, ]
-  if(length(tvar) > 0) warning("Some specified antibodies are missing: ", commas(tvar))
+  if(length(tvar) > 0) warning("Discarding antibodies: ", commas(tvar))
 }
 
 ### Initial visualisation ###%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 cat("Range of UMI:", paste0(range(htos_count), collapse = " to "), "\n");
-filtered_cb <- matrixStats::colMaxs(as.matrix(htos_count)) > 10
-cat(sum(filtered_cb), "of", ncol(htos_count), "who's top feature has more than", 10, "counts.\n")
+min_thr <- min(c(10, matrixStats::rowMaxs(as.matrix(htos_count)) - 1))
+filtered_cb <- matrixStats::colMaxs(as.matrix(htos_count)) > min_thr
+cat(sum(filtered_cb), "of", ncol(htos_count), "who's top feature has more than", min_thr, "counts.\n")
 htos_count <- htos_count[, filtered_cb]
 cat("Range after:", paste0(range(htos_count), collapse = " to "), "\n");
 
@@ -120,6 +132,9 @@ graphics.off()
 
 filtered_cb <- matrixStats::colMaxs(as.matrix(htos_count)) > opt$min_count
 cat(sum(filtered_cb), "of", ncol(htos_count), "who's top feature has more than", opt$min_count, "counts\n")
+if(sum(filtered_cb) == 0){
+  stop("Nothing to do here... not enough counts per hashtag to perform the analysis")
+}
 htos_count <- htos_count[, filtered_cb]
 
 ddf <- data.frame(t(as.matrix(htos_count)))

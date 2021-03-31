@@ -45,7 +45,7 @@ optlist <- list(
     "Example: list(c('var_name', 'new_name'), c('ugly', 'bonito')).")
   ),
   make_option(
-    opt_str = c("-e", "--metadata"), type = "character", default = "none",
+    opt_str = c("-e", "--metadata"), type = "character",
     help = paste0("Donors' metadata file. Indicate the donor names\n\t\t",
                   "column after a '~', e. g., file_name.csv~patient")
   ),
@@ -99,7 +99,8 @@ libnames <- if(file.exists(opt$selected)){
   # substitutions for compatibility between Gex and CITE libraries
   gsub("^[0-9]{1,}_|_Gex", "", as.character(clust_annot[, 1]))
 }else{
-  dirname(annot_names)
+  if(opt$selected != "") opt$prefix <- gsub("\\|", ".", opt$selected)
+  grep(opt$selected, dirname(annot_names), value = TRUE)
 }
 opt$selected <- paste0(libnames, collapse = "|")
 annot_names <- unlist(sapply( # This preserves the aggregation file order
@@ -179,13 +180,11 @@ if(!is.null(opt$tag_str)) colnames(meta_donor) <- translist(opt$tag_str)[[1]]
 headtail(meta_donor)
 cat("Checking created columns\n")
 lapply(meta_donor, table, useNA = 'always')
-rnname <- ifelse(grepl("~", opt$metadata), gsub(".*~", "", opt$metadata), 1)
-opt$metadata <- gsub("~.*", "", opt$metadata)
-if(isTRUE(file.exists(opt$metadata))){
-  cat(
-    "Adding given metadata:", opt$metadata,
-    "\n- Using row names:", rnname, "\n"
-  )
+if(!is.null(opt$metadata)){
+  rnname <- ifelse(grepl("~", opt$metadata), gsub(".*~", "", opt$metadata), 1)
+  opt$metadata <- gsub("~.*", "", opt$metadata)
+  # if(isTRUE(file.exists(opt$metadata))){
+  cat("Adding given metadata:", opt$metadata, "\n- Using row names:", rnname, "\n")
   extra_meta_donor <- read.csv(
     opt$metadata, stringsAsFactors = FALSE, row.names = rnname
   )
@@ -195,6 +194,7 @@ if(isTRUE(file.exists(opt$metadata))){
   sapply(extra_meta_donor_e, table, useNA = 'always')
   meta_donor <- joindf(meta_donor, extra_meta_donor_e)
   headtail(meta_donor)
+  # }
 }
 captured_htdf0 <- joindf(captured_htdf0, meta_donor)
 

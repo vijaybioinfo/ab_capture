@@ -16,7 +16,7 @@ demux:
 # args is for summary.R (exclude min_count, selected, and tag_str)
 aggregation:
   source: "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/fungal_allergy/raw/cellranger/aggr"
-  args: "--metadata=/home/ciro/fungal_allergy/info/metadata_donor.csv~donor"
+  args: "--metadata=/home/ciro/fungal_allergy/info/metadata_donor.csv~donor" # arguments for summary.R
 # Feature name structure; example is from Placebo-V-TSC5-C0305
 # Always include 'donor' as one of them.
 tag_str: treatment~donor~hashtag_n~hashtag_id

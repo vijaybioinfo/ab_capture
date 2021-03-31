@@ -17,7 +17,8 @@ NOTES:
 1. The pipeline relies on the samples having the follwing patterns in their name:
 	- **Gex**: to use Cell Ranger's "count" routine.
 	- **CITE**: to use Cell Ranger's "count" routine and identify it as Feature Barcode.
-2. For now this has to be a two step process.
+
+It takes about 5 minutes with 90K cells with 20gb and 1 node/1 processor.
 
 ### Install
 Clone this repository (your ~/bin folder is a good place).
@@ -36,9 +37,4 @@ sh locate_pipeline.sh
 After you've added the necessary information to the YAML file you can call the pipeline.
 ```
 ab_capture -y /path/to/project/config.yaml
-Rscript /path/to/ab_capture/summary.R -h
-Rscript /path/to/ab_capture/summary.R -c /path/to/yout/results/project_name_100th \
-  --selected /path/to/aggr_name/outs/aggregation.csv \ # <- optional
-  --metadata /path/to/metadata_donor.csv~donor \ # <- optional
-  --tag_str treatment~donor~hashtag_n~hashtag_id # check the help
 ```

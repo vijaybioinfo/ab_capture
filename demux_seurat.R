@@ -414,11 +414,14 @@ for(i in tail(1:length(mode_classes), 1)){
 
   mylevels = c(Doublet = "red", Singlet = "blue", Negative = "#BEBEBE")[levels(Idents(ht_object))]
   ht_object@meta.data$is_there_gex <- ifelse(ht_object@meta.data$in_gex, "In Gex", "No Gex")
+  ht_object@meta.data$UMIs <- log2(annot[, grep("nCount_", colnames(annot), value = TRUE)[1]] + 1)
+  # ht_object@meta.data$UMIs[ht_object@meta.data$UMIs<log2(500+1)] <- NA
   for(redu in names(ht_object@reductions)){
     p1 <- DimPlot(ht_object, reduction = redu, cols = mylevels)
     p2 <- DimPlot(ht_object, reduction = redu, group.by = unname(mode_class))
     p3 <- DimPlot(ht_object, reduction = redu, group.by = 'is_there_gex', cols = c("In Gex" = "blue", "No Gex" = "red"))
-    p4 <- DimPlot(ht_object, reduction = redu, group.by = paste0(myclassification, ".global"))
+    p4 <- Seurat::FeaturePlot(ht_object, features = "UMIs", reduction = redu) +
+      ggplot2::scale_fill_gradientn(colors = c("lightgrey", "blue"), breaks = pretty(ht_object@meta.data$UMIs))
     pdf(paste0(prefixt, "_4_", redu, "_classes.pdf"), width = 14, height = 12)
     print((p1 | p2) / (p3 | p4))
     graphics.off()

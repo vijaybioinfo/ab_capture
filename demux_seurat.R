@@ -71,6 +71,7 @@ theme_set(theme_cowplot())
 
 ### Pre-processing parameters ###%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 str(opt)
+if(is.null(opt$abodies)) opt$abodies = ""
 if(is.null(opt$prefix)){
   prefix <- basename(gsub("outs.*", "", unlist(opt[1:2])))
   prefix <- gsub("_Gex$|_CITE$", "", prefix)

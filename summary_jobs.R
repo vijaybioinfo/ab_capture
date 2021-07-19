@@ -49,7 +49,7 @@ running_jobs <- function(){
 config_file = read_yaml(defargs$yaml)
 username <- system("echo ${USER}", intern = TRUE)
 
-output_dir <- paste0(dircheck(config_file$output_dir), config_file$project_id, "_", config_file$demux$max_count_min, "th")
+output_dir <- paste0(dircheck(config_file$output_dir), config_file$project_id)
 setwd(output_dir)
 if(defargs$verbose){
   cat(cyan("\n************ Vijay Lab - LJI\n"))

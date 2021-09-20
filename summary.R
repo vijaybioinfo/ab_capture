@@ -189,7 +189,7 @@ if(!is.null(opt$metadata)){
     opt$metadata, stringsAsFactors = FALSE, row.names = rnname
   )
   extra_meta_donor[extra_meta_donor == ""] <- NA
-  extra_meta_donor_e <- extra_meta_donor[meta_donor$donor, ]
+  extra_meta_donor_e <- data.frame(extra_meta_donor[meta_donor$donor, ])
   rownames(extra_meta_donor_e) <- rownames(meta_donor)
   sapply(extra_meta_donor_e, table, useNA = 'always')
   meta_donor <- joindf(meta_donor, extra_meta_donor_e)

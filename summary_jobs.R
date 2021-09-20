@@ -109,6 +109,7 @@ for(aggr in aggregations){
     pbs <- gsub("\\{sampleid\\}", aggregation_name, pbs)
     pbs <- gsub("\\{routine_pbs\\}", routine_pbs_fname, pbs)
     pbs <- gsub("\\{outpath\\}...", output_dir, pbs)
+    pbs <- gsub("\\{outpath\\}", output_dir, pbs)
     pbs <- gsub("\\{routine_params\\}", params, pbs)
     for(i in names(config_file$job)){
       job_parm <- config_file$job[[i]]

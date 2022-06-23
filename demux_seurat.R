@@ -40,6 +40,10 @@ optlist <- list(
     opt_str = c("-d", "--separator"), type = "character", default = "-",
     help = paste0("Separator to identify metadata in hashtag names,\n\t\t",
     "e. g., in D1-ITU-C0256-6 is '-', which is the default.")
+  ),
+  optparse::make_option(
+    opt_str = c("-b", "--cell_barcodes"), type = "character", default = NULL,
+    help = "Metadata table with barcodes to be used."
   )
 )
 optparse <- optparse::OptionParser(option_list = optlist)
@@ -102,6 +106,12 @@ if(any(found_bodies)){
   tvar <- rownames(htos_count)[!found_bodies]
   htos_count <- htos_count[found_bodies, ]
   if(length(tvar) > 0) warning("Discarding antibodies: ", commas(tvar))
+}
+if(!is.null(opt$cell_barcodes)){
+  cell_barcodes = readfile(opt$cell_barcodes)
+  cell_barcodes = rownames(cell_barcodes)[grepl(gsub("^[0-9]_", "", prefix), cell_barcodes$orig.lib)]
+  cell_barcodes = gsub("\\-.*", "-1", cell_barcodes)
+  htos_count = htos_count[, colnames(htos_count) %in% cell_barcodes]
 }
 
 ### Initial visualisation ###%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

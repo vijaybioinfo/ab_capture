@@ -7,45 +7,43 @@
 # This code will cuantify the overlap between two libraries of Gex and Antibody
 # Capture + some other metrics
 
-library(optparse)
-
 optlist <- list(
-  make_option(
+  optparse::make_option(
     opt_str = c("-e", "--edata"), type = "character",
     help = "10x gene expression library."
   ),
-  make_option(
+  optparse::make_option(
     opt_str = c("-c", "--capture"), type = "character",
     help = "Feature Barcodes."
   ),
-  make_option(
+  optparse::make_option(
     opt_str = c("-o", "--outdir"), type = "character",
     help = "Out put directory."
   ),
-  make_option(
+  optparse::make_option(
     opt_str = c("-m", "--min_count"), type = "numeric", default = 100,
     help = "Minimum count for top feature count (min(max(CB))) in cell barcode."
   ),
-  make_option(
+  optparse::make_option(
     opt_str = c("-r", "--ratio_second"), type = "numeric", default = 3,
     help = "Fold change between the first and second hashtag."
   ),
-  make_option(
+  optparse::make_option(
     opt_str = c("-p", "--prefix"), type = "character", default = NULL,
     help = "Prefix. Sample name matching the Gex and CITE."
   ),
-  make_option(
+  optparse::make_option(
     opt_str = c("-a", "--abodies"), type = "character", default = NULL,
     help = "Antibodies to take into account."
   ),
-  make_option(
+  optparse::make_option(
     opt_str = c("-d", "--separator"), type = "character", default = "-",
     help = paste0("Separator to identify metadata in hashtag names,\n\t\t",
     "e. g., in D1-ITU-C0256-6 is '-', which is the default.")
   )
 )
-optparse <- OptionParser(option_list = optlist)
-opt <- parse_args(optparse)
+optparse <- optparse::OptionParser(option_list = optlist)
+opt <- optparse::parse_args(optparse)
 
 # opt <- list(
 #   edata        = "/mnt/BioAdHoc/Groups/vd-vijay/cramirez/asthma_biopsy/raw/cellranger/count/Biopsy1_Hu_45X_2P_Gex/outs/filtered_feature_bc_matrix",
@@ -301,6 +299,9 @@ if(1){
   cat("Didn't pass the ratio filter")
   print(table(annot[annot$HT_FoldChange < opt$ratio_second, 'HT_ID']))
 }
+captured_htdf0$HT_ID.global <- ifelse(
+  captured_htdf0$HT_ID %in% c("Doublet", "Negative"), captured_htdf0$HT_ID, "Singlet"
+)
 
 ### Saving results ### %%%%%%%%%%%%%
 save(annot, file = paste0("step_0_annotation.rdata"))

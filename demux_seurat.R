@@ -309,8 +309,8 @@ if(1){
   cat("Didn't pass the ratio filter")
   print(table(annot[annot$HT_FoldChange < opt$ratio_second, 'HT_ID']))
 }
-captured_htdf0$HT_ID.global <- ifelse(
-  captured_htdf0$HT_ID %in% c("Doublet", "Negative"), captured_htdf0$HT_ID, "Singlet"
+annot$HT_ID.global <- ifelse(
+  annot$HT_ID %in% c("Doublet", "Negative"), annot$HT_ID, "Singlet"
 )
 
 ### Saving results ### %%%%%%%%%%%%%

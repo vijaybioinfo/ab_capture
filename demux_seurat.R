@@ -227,7 +227,7 @@ if(1){
     )
   }
 }
-ht_object$origlib <- basename(gsub("outs.*", "", opt$edata))
+ht_object$origlib <- gsub("_CITE$", "_Gex", basename(gsub("outs.*", "", opt$capture)))
 annot <- ht_object@meta.data[, grepl("MULTI|HTO|hash|origlib", colnames(ht_object[[]]))]
 cat("Calculating fold-change: 1st / 2nd.\n")
 ids_umis <- data.frame(data.table::rbindlist(lapply(1:nrow(annot), function(thiscell){

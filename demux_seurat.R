@@ -406,8 +406,8 @@ for(i in tail(1:length(mode_classes), 1)){
   for(i in head(1:nrow(hto_pairs), 10)){
     print(hto_pairs[i, ])
     htos <- paste0("hto_", hto_pairs[i, ])
-    p <- FeatureScatter(ht_object, feature1 = htos[1], feature2 = htos[2])
-    print(p)
+    p <- try(FeatureScatter(ht_object, feature1 = htos[1], feature2 = htos[2]))
+    if(class(p)[1] != "try-error") print(p)
   }; graphics.off()
 
   # Compare number of UMIs for singlets, doublets and negative cells
@@ -432,7 +432,7 @@ for(i in tail(1:length(mode_classes), 1)){
     p1 <- DimPlot(ht_object, reduction = redu, cols = mylevels)
     p2 <- DimPlot(ht_object, reduction = redu, group.by = unname(mode_class))
     p3 <- DimPlot(ht_object, reduction = redu, group.by = 'is_there_gex', cols = c("In Gex" = "blue", "No Gex" = "red"))
-    p4 <- Seurat::FeaturePlot(ht_object, features = "UMIs", reduction = redu) +
+    p4 <- FeaturePlot(ht_object, features = "UMIs", reduction = redu) +
       ggplot2::scale_fill_gradientn(colors = c("lightgrey", "blue"), breaks = pretty(ht_object@meta.data$UMIs))
     pdf(paste0(prefixt, "_4_", redu, "_classes.pdf"), width = 14, height = 12)
     print((p1 | p2) / (p3 | p4))
